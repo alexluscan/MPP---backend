@@ -389,12 +389,10 @@ async fn start_server() -> std::io::Result<()> {
     println!("Initializing server...");
     let generation_status = Arc::new(AtomicBool::new(false));
     let app_state = web::Data::new(AppState {
-        pool: r2d2::Pool::builder()
-            .build(ConnectionManager::<PgConnection>::new("postgres://postgres:luscan@localhost:5432/postgres"))
-            .expect("Failed to create pool"),
+        pool: db::connection::get_pool().clone(),
     });
 
-    println!("Starting HTTP server on http://localhost:3001");
+    println!("Starting HTTP server on http://0.0.0.0:3001");
     HttpServer::new(move || {
         let cors = Cors::default()
             .allow_any_origin()
@@ -435,7 +433,7 @@ async fn start_server() -> std::io::Result<()> {
             .route("/api/stats/avg-price-inefficient", web::get().to(avg_price_inefficient_handler))
             .route("/api/stats/avg-price-per-category-inefficient", web::get().to(avg_price_per_category_inefficient_handler))
     })
-    .bind("127.0.0.1:3001")?
+    .bind("0.0.0.0:3001")?
     .run()
     .await
 }
@@ -643,11 +641,9 @@ async fn main() -> std::io::Result<()> {
     // Initialize the database connection pool
     db::connection::init_pool();
     
-    // Initialize the app state with only the pool
+    // Initialize the app state with the pool from db::connection
     let app_state = web::Data::new(AppState {
-        pool: r2d2::Pool::builder()
-            .build(ConnectionManager::<PgConnection>::new("postgres://postgres:luscan@localhost:5432/postgres"))
-            .expect("Failed to create pool"),
+        pool: db::connection::get_pool().clone(),
     });
     
     // Clone app_state for the background task
@@ -663,7 +659,7 @@ async fn main() -> std::io::Result<()> {
         monitor_logs_task(app_state_clone).await;
     });
 
-    println!("Server running at http://localhost:3001");
+    println!("Server running at http://0.0.0.0:3001");
 
     start_server().await
 }
