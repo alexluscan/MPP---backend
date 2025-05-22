@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: mpp-backend
+    env: rust
+    region: oregon  # You can change this to your preferred region
+    plan: starter
+    buildCommand: cargo build --release
+    startCommand: ./target/release/backend
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: RUST_LOG
+        value: info
+      - key: SERVER_HOST
+        value: 0.0.0.0
+      - key: SERVER_PORT
+        value: 3001
+      - key: DATABASE_POOL_SIZE
+        value: 10
+      - key: DATABASE_TIMEOUT_SECONDS
+        value: 30
+    healthCheckPath: /health  # Make sure to implement this endpoint in your Rust code
+    autoDeploy: true
+
+databases:
+  - name: mpp-database
+    databaseName: postgres
+    user: postgres
+    plan: free  # You can upgrade this based on your needs 
